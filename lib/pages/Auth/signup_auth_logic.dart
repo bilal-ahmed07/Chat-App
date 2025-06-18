@@ -42,6 +42,7 @@ class AuthService {
       });
 
       return null; 
+      
     } catch (e) {
       SnackBar(content: Text("Signup error"),);
       return e.toString();
