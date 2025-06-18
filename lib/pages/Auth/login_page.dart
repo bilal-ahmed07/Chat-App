@@ -99,7 +99,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 text: 'Swipe to Login',
 
-                //Login Logic
                 onSubmit: () async {
                   final auth = AuthMethods();
 
