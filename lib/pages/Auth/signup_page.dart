@@ -61,10 +61,11 @@ class _SignUpPageState extends State<SignUpPage> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromRGBO(12, 140, 233, 1),
+      backgroundColor: Color.fromRGBO(13, 140, 233, 1),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -116,7 +117,7 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
             child: TextField(
               controller: usernameController,
               decoration: InputDecoration(
@@ -131,7 +132,7 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
             child: TextField(
               controller: emailController,
               decoration: InputDecoration(
@@ -146,7 +147,7 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
             child: TextField(
               obscureText: _isObscure,
               controller: passwordController,
