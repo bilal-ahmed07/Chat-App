@@ -33,6 +33,7 @@ class AuthService {
 
       await firestore.collection('users').doc(username).set({
         'uid': uid,
+        'username': username,
         'name': name,
         'email': email,
         'dp': dpUrl,
@@ -42,7 +43,7 @@ class AuthService {
       });
 
       return null; 
-      
+
     } catch (e) {
       SnackBar(content: Text("Signup error"),);
       return e.toString();
