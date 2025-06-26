@@ -1,6 +1,6 @@
 import 'package:chatapp/pages/Auth/login_auth_logic.dart';
 import 'package:chatapp/pages/Auth/signup_page.dart';
-import 'package:chatapp/pages/chat%20and%20home%20page/home_page.dart';
+import 'package:chatapp/pages/chat-and-home-page/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:slide_to_act/slide_to_act.dart';
 import 'package:flutter/gestures.dart';
