@@ -1,4 +1,4 @@
-import 'package:chatapp/pages/Auth/signup_page.dart';
+import 'package:chatapp/pages/Auth/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -17,9 +17,9 @@ class MyApp extends StatelessWidget {
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 105, 167)),
       ),
-      home: SignUpPage(),
+      home: LoginPage(),
     );
   }
 }
