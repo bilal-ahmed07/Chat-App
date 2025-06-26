@@ -1,5 +1,6 @@
 import 'package:chatapp/pages/Auth/login_page.dart';
-import 'package:chatapp/pages/chat%20and%20home%20page/pending_request.dart';
+import 'package:chatapp/pages/chat-and-home-page/chat_screen.dart';
+import 'package:chatapp/pages/chat-and-home-page/pending_request.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +18,6 @@ class _HomePageState extends State<HomePage> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  List<QueryDocumentSnapshot> allChats = [];
-  List<QueryDocumentSnapshot> chatList = [];
-
-  final List<String> tabs = ['All', 'Unread', 'Read'];
-  int selectedIndex = 0;
-
   String currentUserName = '';
   String currentUserUsername = '';
 
@@ -30,70 +25,61 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadCurrentUserInfo();
-
-    _searchController.addListener(() {
-      final query = _searchController.text.toLowerCase();
-      if (query.isEmpty) {
-        setState(() {
-          chatList = List.from(allChats);
-        });
-      } else {
-        setState(() {
-          chatList = allChats.where((doc) {
-            final data = doc.data()! as Map<String, dynamic>;
-            final friendName = (data['friendName'] ?? '')
-                .toString()
-                .toLowerCase();
-            final lastMessage = (data['lastMessage'] ?? '')
-                .toString()
-                .toLowerCase();
-            return friendName.contains(query) || lastMessage.contains(query);
-          }).toList();
-        });
-      }
-    });
   }
 
   Future<void> _loadCurrentUserInfo() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      try {
-        // Get user info from users collection
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
 
-        if (userDoc.exists) {
-          setState(() {
-            currentUserName = userDoc.data()?['name'] ?? 'User';
-            currentUserUsername = userDoc.data()?['username'] ?? 'username';
-          });
-        }
-      } catch (e) {
-        print('Error loading user info: $e');
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isEqualTo: u.uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        final data = doc.data();
+
+        setState(() {
+          currentUserName = data['name'] ?? '';
+          currentUserUsername = data['username'] ?? '';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: Could not find user document for UID: ${u.uid}',
+            ),
+          ),
+        );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('An error occured')));
     }
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  String _getChatId(String friendUsername) {
+    final users = [currentUserUsername, friendUsername]..sort();
+    return users.join('_');
   }
 
   @override
   Widget build(BuildContext context) {
-    if (FirebaseAuth.instance.currentUser == null) {
-      Future.microtask(() {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      });
+    final u = FirebaseAuth.instance.currentUser;
+    // print(u);
+    if (u == null) {
+      Future.microtask(
+        () => Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage())),
+      );
       return const Scaffold(body: SizedBox());
     }
 
-    final currentUser = FirebaseAuth.instance.currentUser!;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -105,9 +91,9 @@ class _HomePageState extends State<HomePage> {
             AppBar(
               backgroundColor: Colors.white,
               elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.blue),
+              // iconTheme: const IconThemeData(color: Colors.blue),
               leading: IconButton(
-                icon: const Icon(Icons.menu, color: Colors.blue),
+                icon: const Icon(Icons.menu),
                 onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
               title: const Text(''),
@@ -123,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                 child: Align(
                   alignment: Alignment.center,
                   child: IconButton(
-                    icon: const Icon(Icons.search, color: Colors.blue),
+                    icon: const Icon(Icons.search),
                     onPressed: () {
                       setState(() {
                         _isSearching = true;
@@ -175,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                   child: Align(
                     alignment: Alignment.center,
                     child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.blue),
+                      icon: const Icon(Icons.close),
                       onPressed: () {
                         setState(() {
                           _isSearching = false;
@@ -194,220 +180,167 @@ class _HomePageState extends State<HomePage> {
           children: [
             DrawerHeader(
               decoration: const BoxDecoration(color: Colors.blue),
-              child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>?>(
-                future: () {
-                  final uid = FirebaseAuth.instance.currentUser?.uid;
-                  if (uid == null) {
-                    return Future.value(null);
-                  }
-                  return FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(uid)
-                      .get();
-                }(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  }
-
-                  if (!snapshot.hasData ||
-                      snapshot.data == null ||
-                      !snapshot.data!.exists) {
-                    return const Center(
-                      child: Text(
-                        'User not found',
-                        style: TextStyle(color: Colors.white),
+              child: Container(
+                decoration: BoxDecoration(color: Colors.blue),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      currentUserName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  }
-
-                  final data = snapshot.data!.data();
-
-                  if (data == null) {
-                    return const Center(
-                      child: Text(
-                        'No user data',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
-
-                  final imageUrl = (data['profilePicUrl'] ?? '') as String;
-                  final name = (data['name'] ?? 'User') as String;
-                  final username = (data['username'] ?? 'username') as String;
-
-                  return Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.white,
-                        backgroundImage: imageUrl.isNotEmpty
-                            ? NetworkImage(imageUrl)
-                            : const AssetImage('assets/noProfilePic.jpg')
-                                  as ImageProvider,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '@$username',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                    Text(
+                      '@$currentUserUsername',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
             ),
-
             ListTile(
-              leading: const Icon(Icons.search, color: Colors.blue),
-              title: const Text("Search a friend"),
+              leading: const Icon(Icons.search),
+              title: const Text('Search a friend'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchFriendPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add),
+              title: const Text('Friend Requests'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SearchFriendPage(),
+                    builder: (_) => const PendingRequestsPage(),
                   ),
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.person_add, color: Colors.blue),
-              title: const Text("Friend Requests"),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => PendingRequestsPage()),
-              ),
-            ),
             const Spacer(),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red, size: 30),
+              leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
-                "Logout",
+                'Logout',
                 style: TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
                 ),
               ),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => LoginPage())
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
               },
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(tabs.length, (index) {
-                  bool isSelected = selectedIndex == index;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = index;
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        tabs[index],
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+      body: currentUserUsername.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('chats')
-                  .where('participants', arrayContains: currentUser.uid)
-                  .orderBy('lastMessageTime', descending: true)
+                  .where('participants', arrayContains: currentUserUsername)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No chats yet"));
+                  return const Center(child: Text('No chats yet.'));
                 }
 
-                allChats = snapshot.data!.docs;
-
-                if (!_isSearching || _searchController.text.isEmpty) {
-                  chatList = List.from(allChats);
-                }
+                final chatDocs = snapshot.data!.docs;
 
                 return ListView.builder(
-                  itemCount: chatList.length,
+                  itemCount: chatDocs.length,
                   itemBuilder: (context, index) {
-                    final data =
-                        chatList[index].data()! as Map<String, dynamic>;
-                    final friendName = data['friendName'] ?? 'Friend';
-                    final lastMessage = data['lastMessage'] ?? '';
-                    final time = (data['lastMessageTime'] as Timestamp)
-                        .toDate();
+                    final chatData =
+                        chatDocs[index].data() as Map<String, dynamic>;
+                    final participants = List<String>.from(
+                      chatData['participants'] ?? [],
+                    );
 
-                    return ListTile(
-                      leading: const CircleAvatar(),
-                      title: Text(friendName),
-                      subtitle: Text(lastMessage),
-                      trailing: Text(
-                        TimeOfDay.fromDateTime(time).format(context),
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                    final friendUsername = participants.firstWhere(
+                      (username) => username != currentUserUsername,
+                      orElse: () => '',
+                    );
+
+                    if (friendUsername.isEmpty) return const SizedBox();
+
+                    return FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .where('username', isEqualTo: friendUsername)
+                          .limit(1)
+                          .get(),
+                      builder: (context, userSnapshot) {
+                        if (!userSnapshot.hasData ||
+                            userSnapshot.data!.docs.isEmpty) {
+                          return const SizedBox();
+                        }
+
+                        final userData =
+                            userSnapshot.data!.docs.first.data()
+                                as Map<String, dynamic>;
+
+                        final dp = userData['dp'] ?? '';
+                        final displayName = userData['name'] ?? friendUsername;
+                        final friendUid = userData['uid'] ?? '';
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            radius: 35,
+                            backgroundImage: dp.isNotEmpty
+                                ? NetworkImage(dp)
+                                : const AssetImage('assets/noProfilePic.jpg')
+                                      as ImageProvider,
+                          ),
+                          title: Text(displayName,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600),),
+                          subtitle: Text('@$friendUsername',style: TextStyle(fontSize: 14),),
+                          onTap: () {
+                            if (friendUid.isNotEmpty) {
+                              final chatId = _getChatId(friendUsername);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatPage(
+                                    receiverName: displayName,
+                                    receiverUsername: friendUsername,
+                                    receiverId: friendUid,
+                                    chatId: chatId,
+                                    receiverDp: dp,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Error: Could not find user UID.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
                     );
                   },
                 );
               },
             ),
-          ),
-        ],
-      ),
     );
   }
 }
