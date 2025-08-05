@@ -1,39 +1,51 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:chatapp/pages/Auth/Auth_button.dart';
 import 'package:chatapp/pages/Auth/login_page.dart';
 import 'package:chatapp/pages/Auth/signup_auth_logic.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:slide_to_act/slide_to_act.dart';
-import 'package:flutter/gestures.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+
+class SignupPage extends StatefulWidget {
+  static route() {
+    return MaterialPageRoute(builder: (context) => const SignupPage());
+  }
+
+  const SignupPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  bool _isObscure = true;
-  double _opacity = 0;
-  TextEditingController nameController = TextEditingController();
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+class _SignupPageState extends State<SignupPage> {
+  final formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final nameController = TextEditingController();
+  final usernameController = TextEditingController();
+  bool isObscure = true;
+
 
   File? _selectedImage;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    nameController.dispose();
+    usernameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-
     if (picked != null) {
       setState(() {
         _selectedImage = File(picked.path);
       });
-      await _uploadToCloudinary(_selectedImage!);
     }
   }
 
@@ -41,6 +53,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final url = Uri.parse(
       "https://api.cloudinary.com/v1_1/ddbyofivo/image/upload",
     );
+
     final request = http.MultipartRequest('POST', url)
       ..fields["upload_preset"] = "chatApp"
       ..fields["folder"] = "Profile Picture"
@@ -56,218 +69,188 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  void _showSplash() {
-    setState(() => _opacity = 1);
-    Future.delayed(Duration(milliseconds: 200), () {
-      setState(() => _opacity = 0);
-    });
+  Future<void> _signup() async {
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a profile picture")),
+      );
+      return;
+    }
+
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final dpUrl = await _uploadToCloudinary(_selectedImage!);
+
+      final error = await AuthService.signUpUser(
+        name: nameController.text.trim(),
+        username: usernameController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+        dpUrl: dpUrl,
+      );
+
+      if (error != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Color.fromRGBO(13, 140, 233, 1),
-        body: Center(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    await _pickImage();
-                    _showSplash();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: CircleAvatar(
-                      radius: 45,
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : AssetImage('assets/noProfile.jpg') as ImageProvider,
-                    ),
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new), // or any other icon
+          onPressed: () {
+            Navigator.pop(context); // or custom logic
+          },
+        ),
+      ),
+
+      body: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Form(
+          key: formKey,
+          child: ListView(
+            children: [
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  "Sign Up",
+                  style: TextStyle(fontSize: 50, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Profile Image Picker (optional)
+              GestureDetector(
+                onTap: _pickImage,
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 45,
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : const AssetImage('assets/noProfile.jpg')
+                              as ImageProvider,
                   ),
                 ),
-            
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5.0),
-                  child: Text(
-                    "Sign up!",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 45,
-                    ),
+              ),
+              const SizedBox(height: 30),
+
+              TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: "Name",
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 216, 216, 216),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
                   ),
                 ),
-            
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      hintText: "Name",
-                      fillColor: const Color.fromARGB(255, 216, 216, 216),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                    ),
+              ),
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  labelText: "Username",
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 216, 216, 216),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
                   ),
                 ),
-            
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                  child: TextField(
-                    controller: usernameController,
-                    decoration: InputDecoration(
-                      hintText: "Username",
-                      fillColor: const Color.fromARGB(255, 216, 216, 216),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                    ),
+              ),
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 216, 216, 216),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
                   ),
                 ),
-            
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                  child: TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      hintText: "Email",
-                      fillColor: const Color.fromARGB(255, 216, 216, 216),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                    ),
+              ),
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: passwordController,
+                obscureText: isObscure,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 216, 216, 216),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
                   ),
-                ),
-            
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                  child: TextField(
-                    obscureText: _isObscure,
-                    controller: passwordController,
-                    decoration: InputDecoration(
-                      hintText: 'Password',
-                      fillColor: const Color.fromARGB(255, 216, 216, 216),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      suffixIcon: Listener(
-                        onPointerDown: (_) {
-                          setState(() {
-                            _isObscure = false;
-                          });
-                        },
-                        onPointerUp: (_) {
-                          setState(() {
-                            _isObscure = true;
-                          });
-                        },
-                        child: AbsorbPointer(
-                          child: Icon(
-                            _isObscure ? Icons.visibility : Icons.visibility_off,
-                          ),
-                        ),
-                      ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isObscure ? Icons.visibility : Icons.visibility_off,
                     ),
-                  ),
-                ),
-            
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 42, vertical: 25),
-                  child: SlideAction(
-                    elevation: 4,
-                    borderRadius: 50,
-                    submittedIcon: Icon(Icons.check, color: Colors.green),
-                    innerColor: Colors.white,
-                    outerColor: Color.fromRGBO(9, 121, 201, 0.952),
-                    sliderButtonIcon: Icon(
-                      Icons.arrow_forward,
-                      color: Color.fromRGBO(1, 129, 221, 1),
-                    ),
-                    text: '     Swipe to Sign up',
-                    textStyle: TextStyle(fontSize: 20, color: Colors.white),
-            
-                    onSubmit: () async {
-                      if (_selectedImage == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please select a profile picture'),
-                          ),
-                        );
-                        return;
-                      }
-            
-                      final dpUrl = await _uploadToCloudinary(_selectedImage!);
-            
-                      final error = await AuthService.signUpUser(
-                        name: nameController.text.trim(),
-                        username: usernameController.text.trim(),
-                        email: emailController.text.trim(),
-                        password: passwordController.text.trim(),
-                        dpUrl: dpUrl,
-                      );
-            
-                      if (error != null) {
-                        print(error);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(error)));
-                        return;
-                      }
-            
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => LoginPage()),
-                      );
+                    onPressed: () {
+                      setState(() {
+                        isObscure =  !isObscure ;
+                      });
                     },
                   ),
                 ),
-            
-                const SizedBox(height: 20),
-            
-                Text.rich(
-                  TextSpan(
-                    text: "Already have an account? ",
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
-                    children: [
-                      TextSpan(
-                        text: "Login",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            nameController.clear();
-                            emailController.clear();
-                            passwordController.clear();
-                            usernameController.clear();
-            
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
+              ),
+              const SizedBox(height: 20),
+
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : AppGradientButton(
+                      buttonText: "Sign up",
+                      onPressed: _signup,
+                    ),
+              const SizedBox(height: 20),
+
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                child: Center(
+                  child: RichText(
+                    text: TextSpan(
+                      text: "Already have an account? ",
+                      style: Theme.of(context).textTheme.titleMedium,
+                      children: [
+                        TextSpan(
+                          text: "Sign in",
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: const Color.fromRGBO(251, 109, 169, 1),
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
