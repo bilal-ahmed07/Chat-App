@@ -33,7 +33,7 @@ class _ChatPageState extends State<ChatPage> {
     if (_messageController.text.isNotEmpty) {
       String messageText = _messageController.text;
       _messageController.clear();
-      
+
       await _chatService.sendMessage(
         widget.chatId,
         widget.receiverId,
@@ -66,7 +66,8 @@ class _ChatPageState extends State<ChatPage> {
             CircleAvatar(
               backgroundImage: widget.receiverDp.isNotEmpty
                   ? NetworkImage(widget.receiverDp)
-                  : const AssetImage('assets/noProfilePic.jpg') as ImageProvider,
+                  : const AssetImage('assets/noProfilePic.jpg')
+                        as ImageProvider,
             ),
             const SizedBox(width: 15),
             Text(
@@ -75,15 +76,21 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
+
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new), // or any other icon
+          onPressed: () {
+            Navigator.pop(context); // or custom logic
+          },
+        ),
+
         centerTitle: false,
         elevation: 1,
         backgroundColor: Colors.white,
       ),
       body: Column(
         children: [
-          Expanded(
-            child: _buildMessageList(),
-          ),
+          Expanded(child: _buildMessageList()),
           _buildMessageInput(),
         ],
       ),
@@ -118,7 +125,9 @@ class _ChatPageState extends State<ChatPage> {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     bool isCurrentUser = data['senderId'] == _auth.currentUser!.uid;
 
-    var alignment = isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
+    var alignment = isCurrentUser
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
 
     var borderRadius = isCurrentUser
         ? const BorderRadius.only(
@@ -131,7 +140,7 @@ class _ChatPageState extends State<ChatPage> {
             topRight: Radius.circular(20),
             bottomRight: Radius.circular(20),
           );
-    
+
     var bubbleColor = isCurrentUser ? Colors.blue : const Color(0xFFF1F0F5);
     var textColor = isCurrentUser ? Colors.white : Colors.black87;
 
@@ -139,7 +148,9 @@ class _ChatPageState extends State<ChatPage> {
       alignment: alignment,
       margin: const EdgeInsets.symmetric(vertical: 5.0),
       child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
           color: bubbleColor,
@@ -147,10 +158,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
         child: Text(
           data['message'],
-          style: TextStyle(
-            color: textColor,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: textColor, fontSize: 16),
         ),
       ),
     );
