@@ -15,11 +15,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
+  // bool _isSearching = false;
+  // final TextEditingController _searchController = TextEditingController();
+
 
   String currentUserName = '';
   String currentUserUsername = '';
+  String profilePic = '';
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           currentUserName = data['name'] ?? '';
           currentUserUsername = data['username'] ?? '';
+          profilePic = data['dp'] ?? '';
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,7 +83,6 @@ class _HomePageState extends State<HomePage> {
       return const Scaffold(body: SizedBox());
     }
 
-    final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -99,79 +101,6 @@ class _HomePageState extends State<HomePage> {
               title: const Text(''),
               actions: [],
             ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-              left: _isSearching ? 56 : screenWidth - 56,
-              top: 32,
-              child: SizedBox(
-                height: kToolbarHeight - 16,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () {
-                      setState(() {
-                        _isSearching = true;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              top: 23,
-              left: _isSearching ? 100 : screenWidth,
-              right: 48,
-              child: AnimatedOpacity(
-                opacity: _isSearching ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: SizedBox(
-                  height: kToolbarHeight,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search...',
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (_isSearching)
-              Positioned(
-                right: 0,
-                top: 23,
-                child: SizedBox(
-                  height: kToolbarHeight,
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        setState(() {
-                          _isSearching = false;
-                          _searchController.clear();
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -179,25 +108,54 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.blue),
+              decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color.fromRGBO(63, 221, 76, 1),
+                      Color.fromRGBO(165, 223, 142, 1),
+                      Color.fromRGBO(149, 251, 109, 1),
+                    ],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                  ),
+                ),
+              // decoration: const BoxDecoration(color: Colors.blue),
+              padding: EdgeInsets.all(0),
+              margin: EdgeInsets.all(0),
               child: Container(
-                decoration: BoxDecoration(color: Colors.blue),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      currentUserName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                width: double.infinity,
+                
+                child: Padding(
+                  padding: const EdgeInsets.all(19),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(profilePic),
+                        radius: 38,
                       ),
-                    ),
-                    Text(
-                      '@$currentUserUsername',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ],
+                      const SizedBox(width: 18),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            currentUserName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '@$currentUserUsername',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -307,8 +265,17 @@ class _HomePageState extends State<HomePage> {
                                 : const AssetImage('assets/noProfilePic.jpg')
                                       as ImageProvider,
                           ),
-                          title: Text(displayName,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600),),
-                          subtitle: Text('@$friendUsername',style: TextStyle(fontSize: 14),),
+                          title: Text(
+                            displayName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '@$friendUsername',
+                            style: TextStyle(fontSize: 14),
+                          ),
                           onTap: () {
                             if (friendUid.isNotEmpty) {
                               final chatId = _getChatId(friendUsername);
