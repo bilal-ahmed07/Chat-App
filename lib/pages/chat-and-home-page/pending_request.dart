@@ -38,59 +38,58 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
   }
 
   Future<void> _confirmRequest(String requesterId) async {
-  if (currentRecordId == null) return;
+    if (currentRecordId == null) return;
 
-  final currentUid = FirebaseAuth.instance.currentUser!.uid;
-  final users = FirebaseFirestore.instance.collection('users');
+    final users = FirebaseFirestore.instance.collection('users');
 
-  // Fetch requester user document by UID
-  final requesterDocSnapshot = await users.where('uid', isEqualTo: requesterId).limit(1).get();
-  if (requesterDocSnapshot.docs.isEmpty) return;
-  final requesterDoc = requesterDocSnapshot.docs.first;
-  final requesterData = requesterDoc.data();
-  final requesterUsername = requesterData['username'];
+    final requesterDocSnapshot = await users
+        .where('uid', isEqualTo: requesterId)
+        .limit(1)
+        .get();
+    if (requesterDocSnapshot.docs.isEmpty) return;
+    final requesterDoc = requesterDocSnapshot.docs.first;
+    final requesterData = requesterDoc.data();
+    final requesterUsername = requesterData['username'];
 
-  // Fetch current user document by currentRecordId
-  final currentUserDoc = await users.doc(currentRecordId!).get();
-  final currentUserData = currentUserDoc.data();
-  final currentUsername = currentUserData?['username'];
+    final currentUserDoc = await users.doc(currentRecordId!).get();
+    final currentUserData = currentUserDoc.data();
+    final currentUsername = currentUserData?['username'];
 
-  final batch = FirebaseFirestore.instance.batch();
+    final batch = FirebaseFirestore.instance.batch();
 
-  // Update friend lists and remove request
-  batch.update(users.doc(currentRecordId!), {
-    'friends': FieldValue.arrayUnion([requesterUsername]),
-    'friendRequests': FieldValue.arrayRemove([requesterUsername]),
-  });
-  batch.update(requesterDoc.reference, {
-    'friends': FieldValue.arrayUnion([currentUsername]),
-  });
-
-  // Sorted chat ID based on usernames
-  final sortedUsernames = [currentUsername, requesterUsername]..sort();
-  final chatId = sortedUsernames.join('_');
-
-  final chatDocRef = FirebaseFirestore.instance.collection('chats').doc(chatId);
-
-  final chatSnapshot = await chatDocRef.get();
-  if (!chatSnapshot.exists) {
-    batch.set(chatDocRef, {
-      'participants': sortedUsernames,
-      'createdAt': FieldValue.serverTimestamp(),
-      'lastMessage': '',
-      'lastMessageTime': FieldValue.serverTimestamp(),
+    batch.update(users.doc(currentRecordId!), {
+      'friends': FieldValue.arrayUnion([requesterUsername]),
+      'friendRequests': FieldValue.arrayRemove([requesterUsername]),
     });
+    batch.update(requesterDoc.reference, {
+      'friends': FieldValue.arrayUnion([currentUsername]),
+    });
+
+    final sortedUsernames = [currentUsername, requesterUsername]..sort();
+    final chatId = sortedUsernames.join('_');
+
+    final chatDocRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId);
+
+    final chatSnapshot = await chatDocRef.get();
+    if (!chatSnapshot.exists) {
+      batch.set(chatDocRef, {
+        'participants': sortedUsernames,
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastMessage': '',
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
+
+    setState(() => pendingRequestIds.remove(requesterId));
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Friend request accepted')));
   }
-
-  await batch.commit();
-
-  setState(() => pendingRequestIds.remove(requesterId));
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Friend request accepted')),
-  );
-}
-
 
   Future<void> _cancelRequest(String requesterId) async {
     if (currentRecordId == null) return;
@@ -108,7 +107,15 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pending Requests')),
+      appBar: AppBar(
+        title: const Text('Pending Requests'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: pendingRequestIds.isEmpty
           ? const Center(child: Text('No pending requests'))
           : ListView.builder(
