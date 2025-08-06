@@ -26,9 +26,7 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
     if (currentUser == null) return;
 
     try {
-      final allUsersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .get();
+      final allUsersSnapshot = await FirebaseFirestore.instance.collection('users').get();
 
       Set<String> sent = {};
 
@@ -44,7 +42,7 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
         sentRequests = sent;
       });
     } catch (e) {
-      print('Error loading sent requests: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error occured")));
     }
   }
 
@@ -67,10 +65,7 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
       final usersQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
-          .where(
-            'username',
-            isLessThanOrEqualTo: query.toLowerCase() + '\uf8ff',
-          )
+          .where('username', isLessThanOrEqualTo: query.toLowerCase() + '\uf8ff')
           .limit(20)
           .get();
 
@@ -81,14 +76,9 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
           .limit(20)
           .get();
 
-      final currentUserDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
+      final currentUserDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
 
-      final friendsList = List<String>.from(
-        currentUserDoc.data()?['friends'] ?? [],
-      );
+      final friendsList = List<String>.from(currentUserDoc.data()?['friends'] ?? []);
 
       Set<String> userIds = {};
       List<Map<String, dynamic>> results = [];
@@ -111,38 +101,29 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
         }
       }
 
-      results = results
-          .where((user) => !friendsList.contains(user['uid']))
-          .toList();
+      results = results.where((user) => !friendsList.contains(user['uid'])).toList();
 
       setState(() {
         searchResults = results;
         isLoading = false;
       });
     } catch (e) {
-      print('Error searching users: $e');
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  Future<void> _sendFriendRequest(
-    String receiverId,
-    String receiverName,
-  ) async {
+  Future<void> _sendFriendRequest(String receiverId, String receiverName) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
     try {
       final senderId = currentUser.uid;
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(receiverId)
-          .update({
-            'friendRequests': FieldValue.arrayUnion([senderId]),
-          });
+      await FirebaseFirestore.instance.collection('users').doc(receiverId).update({
+        'friendRequests': FieldValue.arrayUnion([senderId]),
+      });
 
       setState(() {
         sentRequests.add(receiverId);
@@ -169,13 +150,18 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         title: const Text(
           'Search Friends',
-          style: TextStyle( fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 1,
-        // iconTheme: const IconThemeData(color: Colors.blue),
       ),
       body: Column(
         children: [
@@ -185,7 +171,10 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by name or username...',
-                prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: Color.fromRGBO(63, 221, 76, 1),
+                ),
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
@@ -206,120 +195,124 @@ class _SearchFriendPageState extends State<SearchFriendPage> {
               },
             ),
           ),
-
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : searchResults.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchController.text.isEmpty
-                              ? 'Search for friends by name or username'
-                              : 'No users found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: searchResults.length,
-                    itemBuilder: (context, index) {
-                      final user = searchResults[index];
-                      final userId = user['uid'];
-                      final name = user['name'] ?? 'Unknown';
-                      final username = user['username'] ?? 'unknown';
-                      final isRequestSent = sentRequests.contains(userId);
-
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: Colors.blue[100],
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.search, size: 64, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchController.text.isEmpty
+                                  ? 'Search for friends by name or username'
+                                  : 'No users found',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
                               ),
                             ),
-                          ),
-                          title: Text(
-                            name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '@$username',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                          trailing: isRequestSent
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Text(
-                                    'Sent',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                )
-                              : OutlinedButton.icon(
-                                  onPressed: () =>
-                                      _sendFriendRequest(userId, name),
-                                  icon: const Icon(
-                                    Icons.add,
-                                    color: Colors.blue,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    'Add',
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.blue),
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          final user = searchResults[index];
+                          final userId = user['uid'];
+                          final name = user['name'] ?? 'Unknown';
+                          final username = user['username'] ?? 'unknown';
+                          final dpUrl = user['dp'] ?? '';
+                          final isRequestSent = sentRequests.contains(userId);
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                radius: 25,
+                                backgroundImage: dpUrl.isNotEmpty ? NetworkImage(dpUrl) : null,
+                                child: dpUrl.isEmpty
+                                    ? Text(
+                                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              title: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '@$username',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                              trailing: isRequestSent
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Text(
+                                        'Sent',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    )
+                                  : OutlinedButton.icon(
+                                      onPressed: () => _sendFriendRequest(userId, name),
+                                      icon: const Icon(
+                                        Icons.add,
+                                        color: Color.fromRGBO(63, 221, 76, 1),
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Add',
+                                        style: TextStyle(
+                                          color: Color.fromRGBO(63, 221, 76, 1),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(
+                                          color: Color.fromRGBO(63, 221, 76, 1),
+                                          width: 1.5,
+                                        ),
+                                        backgroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
