@@ -21,7 +21,7 @@ class AppGradientButton extends StatelessWidget {
             // Color.fromRGBO(251, 109, 169, 1),
             Color.fromRGBO(63, 221, 76, 1),
             // Color.fromRGBO(165, 223, 142, 1),
-            Color.fromRGBO(119, 255, 65, 1),
+            Color.fromRGBO(57, 143, 23, 1),
           ],
           begin: Alignment.bottomLeft,
           end: Alignment.topRight,
