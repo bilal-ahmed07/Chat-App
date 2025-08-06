@@ -44,6 +44,8 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -78,12 +80,13 @@ class _ChatPageState extends State<ChatPage> {
         ),
 
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new), // or any other icon
+          icon: Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            Navigator.pop(context); // or custom logic
+            Navigator.pop(context); 
           },
         ),
 
+        
         centerTitle: false,
         elevation: 1,
         backgroundColor: Colors.white,
@@ -141,7 +144,7 @@ class _ChatPageState extends State<ChatPage> {
             bottomRight: Radius.circular(20),
           );
 
-    var bubbleColor = isCurrentUser ? Colors.blue : const Color(0xFFF1F0F5);
+    var bubbleColor = isCurrentUser ? Color.fromRGBO(63, 221, 76, 1) : const Color(0xFFF1F0F5);
     var textColor = isCurrentUser ? Colors.white : Colors.black87;
 
     return Container(
@@ -201,7 +204,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             const SizedBox(width: 8),
             Material(
-              color: Colors.blue,
+              color: Color.fromRGBO(63, 221, 76, 1),
               borderRadius: BorderRadius.circular(30),
               child: InkWell(
                 onTap: _sendMessage,
