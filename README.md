@@ -40,18 +40,25 @@ A beautiful and functional real-time chat application built with **Flutter**, us
 
 ## 📷 Screenshots
 ![alt text](assets/Login-Page.JPG)
+
 Login Page
 ![alt text](assets/Signup-Page.JPG)
+
 Signup Page
 ![alt text](assets/Home-Page.JPG)
+
 Home Page
 ![alt text](assets/Home-Page-Drawer.JPG)
+
 Home Page Drawer
 ![alt text](assets/Chat-Screen.JPG)
+
 Chat Screen
 ![alt text](assets/Search-friend-Page.JPG)
+
 Search Friend
 ![alt text](assets/Pending-Request-Page.JPG)
+
 Pending Request
 ---
 
