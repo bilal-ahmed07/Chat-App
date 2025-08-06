@@ -116,9 +116,9 @@ class _SignupPageState extends State<SignupPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new), // or any other icon
+          icon: Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            Navigator.pop(context); // or custom logic
+            Navigator.pop(context); 
           },
         ),
       ),
@@ -241,7 +241,8 @@ class _SignupPageState extends State<SignupPage> {
                           text: "Sign in",
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
-                                color: const Color.fromRGBO(251, 109, 169, 1),
+                                // color: const Color.fromRGBO(251, 109, 169, 1),
+                                color: Color.fromRGBO(63, 221, 76, 1),
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
