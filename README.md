@@ -1,16 +1,57 @@
-# chatapp
+# 🔥 Flutter Chat App
 
-A new Flutter project.
+A beautiful and functional real-time chat application built with **Flutter**, using **Firebase** for authentication & real-time messaging, and **Cloudinary** for profile image uploads.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- 🔐 **User Authentication** (Firebase)
+  - Sign up and login functionality
+  - Profile picture upload via Cloudinary
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 💬 **Real-time Chat**
+  - Chat with added friends
+  - View conversation history
+  - Firebase Firestore as backend
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 🧑‍🤝‍🧑 **Social Features**
+  - Send & manage friend requests
+  - Accept or reject pending requests
+  - Search for users by username
+
+- 🏠 **User Interface**
+  - Modern UI design
+  - Chat list (home screen)
+  - Chat screen with message bubbles
+  - Gradient buttons
+
+---
+
+## 🛠️ Technologies Used
+
+- **Flutter** (Dart)
+- **Firebase Authentication**
+- **Firebase Firestore**
+- **Cloudinary** (image upload)
+- `image_picker`, `http`
+
+---
+
+## 📷 Screenshots
+![alt text](assets/Login-Page.JPG)
+Login Page
+![alt text](assets/Signup-Page.JPG)
+Signup Page
+![alt text](assets/Home-Page.JPG)
+Home Page
+![alt text](assets/Home-Page-Drawer.JPG)
+Home Page Drawer
+![alt text](assets/Chat-Screen.JPG)
+Chat Screen
+![alt text](assets/Search-friend-Page.JPG)
+Search Friend
+![alt text](assets/Pending-Request-Page.JPG)
+Pending Request
+---
+
